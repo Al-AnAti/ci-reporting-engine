@@ -57,6 +57,7 @@ jobs:
                 with open(summary_file, 'a', encoding='utf-8') as f:
                     f.write('## 📊 Benchmark Results\n')
                     f.write(f'**Environment:** {data[\"environment\"]}\n')
+                    f.write(f'**intensity:** {data[\"intensity\"]}\n')
 
                     # Write Markdown table structural headers
                     f.write('| Game | Average FPS | 1% Lows |\n')
