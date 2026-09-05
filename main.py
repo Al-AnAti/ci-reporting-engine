@@ -14,9 +14,9 @@ def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--env", dest="env", help="decide whether you are in production or development", required=True,
-                        type=str.upper, choices=("prod", "dev"))
+                        type=str.upper, choices=("PROD", "DEV"))
     parser.add_argument("--intensity", dest="intensity", help="decide how intense the benchmark will be", required=True,
-                        type=str.upper, choices=("low", "mid", "high"))
+                        type=str.upper, choices=("LOW", "MID", "HIGH"))
 
     return parser.parse_args()
 
