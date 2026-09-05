@@ -1,0 +1,71 @@
+name: reporting-engine
+on:
+    push:
+    workflow_dispatch:
+        inputs:
+            env:
+                description: 'decide whether you are in production or development'
+                required: true
+                default: 'dev'
+                type: choice
+                options:
+                    - dev
+                    - prod
+            intensity:
+                description: 'decide how intense the benchmark will be'
+                required: true
+                default: 'low'
+                type: choice
+                options:
+                    - low
+                    - mid
+                    - high
+
+jobs:
+    ci:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-python@v5
+            - run: python main.py --env ${{ inputs.env || 'dev' }} --intensity ${{ inputs.intensity || 'low'}}
+            - uses: actions/upload-artifact@v4
+              with:
+                name: telemetry-artifact
+                path: telemetry.json
+            - if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                name: crash-diagnostic
+                path: error_trace.log
+
+    analytics:
+        runs-on: ubuntu-latest
+        needs: ci
+        steps:
+            - uses: actions/download-artifact@v4
+              with:
+                name: telemetry-artifact
+            - name: Generate Dashboard
+              run: |
+                python -c "
+                import json, os
+                with open('telemetry.json') as f:
+                    data = json.load(f)
+                
+                summary_file = os.environ['GITHUB_STEP_SUMMARY']
+
+                with open(summary_file, 'a', encoding='utf-8') as f:
+                    f.write('## 📊 Benchmark Results\n')
+                    f.write(f'**Environment:** {data[\"enviroment\"]}\n')
+
+                    # Write Markdown table structural headers
+                    f.write('| Game | Average FPS | 1% Lows |\n')
+                    f.write('| :--- | :---: | :---: |\n')
+                    
+                    # Loop through the JSON array and append each row
+                    for name, numbers in data['games'].items():
+                        fps = numbers.get(\"average_fps\", \"N/A\")
+                        lows = numbers.get(\"1% low\", \"N/A\")
+                        f.write(f'| {name} | {fps} | {lows} |\n')
+              
+                " 
